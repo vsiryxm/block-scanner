@@ -6,18 +6,13 @@ dev:
     contract_addresses:
       - "0x1234567890123456789012345678901234567890"
       - "0x0987654321098765432109876543210987654321"
-  mysql:
-    host: "localhost"
-    port: 3306
-    user: "root"
-    password: ""
-    database: "db_scanner"
   rabbitmq:
     url: "amqp://user:password@rabbitmq_host:5672/"
     queue_name: "transactions"
   scanner:
     start_block: 1
     concurrent_workers: 10
+    mark_file: "last_scan_block_info.json"
   server:
     port: 8086
 
@@ -27,17 +22,12 @@ prod:
     contract_addresses:
       - "0x1234567890123456789012345678901234567890"
       - "0x0987654321098765432109876543210987654321"
-  mysql:
-    host: "production_mysql_host"
-    port: 3306
-    user: "production_user"
-    password: "production_password"
-    database: "db_scanner"
   rabbitmq:
     url: "amqp://user:password@production_rabbitmq_host:5672/"
     queue_name: "transactions"
   scanner:
     start_block: 1
     concurrent_workers: 20
+    mark_file: "last_scan_block_info.json"
   server:
     port: 9096

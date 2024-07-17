@@ -13,13 +13,6 @@ type Config struct {
 		RPCURL            string   `yaml:"rpc_url"`
 		ContractAddresses []string `yaml:"contract_addresses"`
 	} `yaml:"ethereum"`
-	MySQL struct {
-		Host     string `yaml:"host"`
-		Port     int    `yaml:"port"`
-		User     string `yaml:"user"`
-		Password string `yaml:"password"`
-		Database string `yaml:"database"`
-	} `yaml:"mysql"`
 	RabbitMQ struct {
 		URL       string `yaml:"url"`
 		QueueName string `yaml:"queue_name"`
@@ -27,6 +20,7 @@ type Config struct {
 	Scanner struct {
 		StartBlock        uint64 `yaml:"start_block"`
 		ConcurrentWorkers int    `yaml:"concurrent_workers"`
+		MarkFile          string `yaml:"mark_file"`
 	} `yaml:"scanner"`
 	Server struct {
 		Port int `yaml:"port"`

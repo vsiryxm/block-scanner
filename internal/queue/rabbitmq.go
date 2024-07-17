@@ -53,28 +53,18 @@ func InitRabbitMQ(cfg *config.Config) error {
 	return nil
 }
 
-// func PublishTransactions(transactions []*models.Transaction) error {
 func PublishTransactions(txHashs []*string) error {
 	if rabbitMQ == nil || rabbitMQ.channel == nil {
 		return fmt.Errorf("RabbitMQ not initialized")
 	}
 
-	// for _, tx := range transactions {
 	for _, txHash := range txHashs {
-		// body, err := json.Marshal(tx)
-		// if err != nil {
-		// 	return err
-		// }
 
 		err := rabbitMQ.channel.Publish(
 			"",                 // exchange
 			rabbitMQ.queueName, // routing key
 			false,              // mandatory
 			false,              // immediate
-			// amqp.Publishing{
-			// 	ContentType: "application/json",
-			// 	Body:        body,
-			// }
 			amqp.Publishing{
 				ContentType: "text/plain",
 				Body:        []byte(*txHash), // 将字符串转换为 []byte

@@ -12,7 +12,6 @@ import (
 
 	"block-scanner/config"
 	"block-scanner/internal/blockchain"
-	"block-scanner/internal/database"
 	"block-scanner/internal/queue"
 )
 
@@ -22,13 +21,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
-
-	// 初始化数据库连接
-	err = database.InitDB(cfg)
-	if err != nil {
-		log.Fatalf("Error initializing database: %v", err)
-	}
-	defer database.CloseDB()
 
 	// 初始化 RabbitMQ 连接
 	err = queue.InitRabbitMQ(cfg)
