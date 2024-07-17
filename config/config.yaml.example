@@ -8,7 +8,7 @@ dev:
       - "0x0987654321098765432109876543210987654321"
   mysql:
     host: "localhost"
-    port: 3308
+    port: 3306
     user: "root"
     password: ""
     database: "db_scanner"
@@ -16,7 +16,7 @@ dev:
     url: "amqp://user:password@rabbitmq_host:5672/"
     queue_name: "transactions"
   scanner:
-    start_block: 0
+    start_block: 1
     concurrent_workers: 10
   server:
     port: 8086
@@ -37,7 +37,7 @@ prod:
     url: "amqp://user:password@production_rabbitmq_host:5672/"
     queue_name: "transactions"
   scanner:
-    start_block: 0
+    start_block: 1
     concurrent_workers: 20
   server:
-    port: 9086
+    port: 9096

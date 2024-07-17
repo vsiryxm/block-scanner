@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"block-scanner/config"
+	"block-scanner/internal/models"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -36,7 +37,8 @@ func InitDB(cfg *config.Config) error {
 		}
 
 		// 自动迁移模型
-		// err = db.AutoMigrate(&models.Block{}, &models.Transaction{})
+		db.AutoMigrate(&models.Block{}, &models.Transaction{})
+
 	})
 	return err
 }

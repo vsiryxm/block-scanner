@@ -95,6 +95,10 @@ func (s *Scanner) Start() error {
 			continue
 		}
 
+		if s.startBlock == 0 {
+			s.startBlock = 1
+		}
+
 		// 扫描新区块
 		for blockNumber := s.startBlock; blockNumber <= latestBlock; blockNumber++ {
 			err := s.processBlock(blockNumber)
@@ -179,7 +183,12 @@ func (s *Scanner) processBlock(blockNumber uint64) error {
 	}
 
 	// 发布交易到 RabbitMQ
-	err = queue.PublishTransactions(transactions)
+	txHashs := make([]*string, len(transactions))
+	for k, v := range transactions {
+		txHashs[k] = &v.TxHash
+	}
+	// err = queue.PublishTransactions(transactions)
+	err = queue.PublishTransactions(txHashs)
 	if err != nil {
 		return err
 	}
@@ -200,8 +209,8 @@ func (s *Scanner) isRelevantTransaction(tx *types.Transaction) bool {
 	if tx.To() == nil {
 		return false
 	}
+	from, err := types.Sender(types.LatestSignerForChainID(tx.ChainId()), tx)
 
-	from, err := types.Sender(types.NewEIP155Signer(tx.ChainId()), tx)
 	if err != nil {
 		log.Printf("Error getting transaction sender: %v", err)
 		return false

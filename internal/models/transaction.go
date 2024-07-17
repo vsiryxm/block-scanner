@@ -21,6 +21,10 @@ type Transaction struct {
 	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`
 }
 
+func (t *Transaction) TableName() string {
+	return "tb_transaction"
+}
+
 func (t *Transaction) Create(db *gorm.DB) error {
 	return db.Create(t).Error
 }

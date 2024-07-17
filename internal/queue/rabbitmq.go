@@ -1,12 +1,10 @@
 package queue
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"block-scanner/config"
-	"block-scanner/internal/models"
 
 	"github.com/streadway/amqp"
 )
@@ -20,7 +18,6 @@ type RabbitMQ struct {
 var rabbitMQ *RabbitMQ
 
 func InitRabbitMQ(cfg *config.Config) error {
-	fmt.Println("=========", cfg.RabbitMQ.URL)
 
 	conn, err := amqp.DialConfig(cfg.RabbitMQ.URL, amqp.Config{
 		Dial: amqp.DefaultDial(10 * time.Second),
@@ -40,7 +37,7 @@ func InitRabbitMQ(cfg *config.Config) error {
 		true,  // durable
 		false, // delete when unused
 		false, // exclusive
-		false, // no-wait
+		true,  // no-wait
 		nil,   // arguments
 	)
 	if err != nil {
@@ -56,26 +53,33 @@ func InitRabbitMQ(cfg *config.Config) error {
 	return nil
 }
 
-func PublishTransactions(transactions []*models.Transaction) error {
+// func PublishTransactions(transactions []*models.Transaction) error {
+func PublishTransactions(txHashs []*string) error {
 	if rabbitMQ == nil || rabbitMQ.channel == nil {
 		return fmt.Errorf("RabbitMQ not initialized")
 	}
 
-	for _, tx := range transactions {
-		body, err := json.Marshal(tx)
-		if err != nil {
-			return err
-		}
+	// for _, tx := range transactions {
+	for _, txHash := range txHashs {
+		// body, err := json.Marshal(tx)
+		// if err != nil {
+		// 	return err
+		// }
 
-		err = rabbitMQ.channel.Publish(
+		err := rabbitMQ.channel.Publish(
 			"",                 // exchange
 			rabbitMQ.queueName, // routing key
 			false,              // mandatory
 			false,              // immediate
+			// amqp.Publishing{
+			// 	ContentType: "application/json",
+			// 	Body:        body,
+			// }
 			amqp.Publishing{
-				ContentType: "application/json",
-				Body:        body,
+				ContentType: "text/plain",
+				Body:        []byte(*txHash), // 将字符串转换为 []byte
 			})
+
 		if err != nil {
 			return fmt.Errorf("error publishing to queue %s: %v", rabbitMQ.queueName, err)
 		}

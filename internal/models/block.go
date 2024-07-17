@@ -15,6 +15,10 @@ type Block struct {
 	ScanStatus  uint8     `gorm:"default:0" json:"scan_status"`
 }
 
+func (b *Block) TableName() string {
+	return "tb_block"
+}
+
 func (b *Block) Create(db *gorm.DB) error {
 	return db.Create(b).Error
 }
