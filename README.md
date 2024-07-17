@@ -13,6 +13,7 @@ Block-Scanner是一个区块扫描程序，主要功能是将以太坊区块链�
 #### 使用
 
 1、修改配置文件
+
 将`config/config.yaml.example`修改成`config/config.yaml`，填写以太坊节点提供者的URL、数据库连接信息、要监控的智能合约地址列表、指定开始扫描的区块号等。
 
 2、导入数据库`database/db_scanner.sql`
@@ -35,6 +36,8 @@ nohup ./block-scanner > logs/block-scanner.log 2>&1 &
 ```
 
 #### 打赏作者
+
+如果对你有所帮助，可以打赏一下哦
 
 ![](./data/me.jpg)
 
