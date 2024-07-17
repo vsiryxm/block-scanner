@@ -41,9 +41,6 @@ func LoadConfig(filename string) (*Config, error) {
 		return nil, err
 	}
 
-	// byteData, _ := json.MarshalIndent(config, "", "\t") //加t 格式化显示
-	// fmt.Println("config===", string(byteData))
-
 	env := config.Environment
 	if env == "" {
 		env = "dev"

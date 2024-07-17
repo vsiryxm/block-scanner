@@ -67,7 +67,7 @@ func PublishTransactions(txHashs []*string) error {
 			false,              // immediate
 			amqp.Publishing{
 				ContentType: "text/plain",
-				Body:        []byte(*txHash), // 将字符串转换为 []byte
+				Body:        []byte(*txHash),
 			})
 
 		if err != nil {

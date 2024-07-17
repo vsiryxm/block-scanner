@@ -33,10 +33,5 @@ chmod +x ./block-scanner
 nohup ./block-scanner > logs/block-scanner.log 2>&1 &
 ```
 
-#### 打赏作者
-
-如果对你有所帮助，可以打赏一下哦
-
-![](./data/me.jpg)
 
 

@@ -16,7 +16,6 @@ import (
 )
 
 func main() {
-	// 加载配置
 	cfg, err := config.LoadConfig("config/config.yaml")
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
@@ -35,26 +34,23 @@ func main() {
 		log.Fatalf("Error creating scanner: %v", err)
 	}
 
-	// 在后台启动扫描器
+	// 启动扫描器
 	go func() {
 		if err := scanner.Start(); err != nil {
 			log.Fatalf("Error starting scanner: %v", err)
 		}
 	}()
 
-	// 设置一个简单的 HTTP 服务器，用于健康检查
 	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "Scanner is running")
 	})
 
-	// 创建 HTTP 服务器
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),
 		Handler: http.DefaultServeMux,
 	}
 
-	// 在后台启动 HTTP 服务器
 	go func() {
 		log.Printf("Starting server on %s", server.Addr)
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -62,7 +58,6 @@ func main() {
 		}
 	}()
 
-	// 等待中断信号以优雅地关闭服务器（设置 5 秒的超时时间）
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit

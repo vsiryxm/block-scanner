@@ -16,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-// Scanner 结构体定义了区块扫描器
 type Scanner struct {
 	client            *ethclient.Client
 	contractAddresses map[common.Address]bool
@@ -30,7 +29,6 @@ type Transaction struct {
 	TxTime time.Time `json:"tx_time"`
 }
 
-// NewScanner 创建一个新的扫描器实例
 func NewScanner(cfg *config.Config) (*Scanner, error) {
 	client, err := ethclient.Dial(cfg.Ethereum.RPCURL)
 	if err != nil {
@@ -54,13 +52,11 @@ func NewScanner(cfg *config.Config) (*Scanner, error) {
 // Start 开始扫描区块
 func (s *Scanner) Start() error {
 	for {
-		// 获取最后扫描的区块
 		lastScannedBlock, err := s.GetLastScannedBlockInfo()
 		if err != nil {
 			log.Printf("Error getting last scanned blocks: %v", err)
 		}
 
-		// 处理未完成的区块
 		if lastScannedBlock.BlockNumber > 0 && lastScannedBlock.ScanStatus == 0 {
 			err := s.processBlock(lastScannedBlock.BlockNumber)
 			if err != nil {
@@ -72,12 +68,10 @@ func (s *Scanner) Start() error {
 			s.SaveLatestScannedBlockInfo(&lastScannedBlock)
 		}
 
-		// 更新起始区块
 		if lastScannedBlock.BlockNumber > 0 && lastScannedBlock.BlockNumber > s.startBlock {
 			s.startBlock = lastScannedBlock.BlockNumber + 1
 		}
 
-		// 获取最新区块
 		latestBlock, err := s.client.BlockNumber(context.Background())
 		if err != nil {
 			log.Printf("Error getting latest block: %v", err)
@@ -89,7 +83,6 @@ func (s *Scanner) Start() error {
 			s.startBlock = 1
 		}
 
-		// 扫描新区块
 		for blockNumber := s.startBlock; blockNumber <= latestBlock; blockNumber++ {
 			err := s.processBlock(blockNumber)
 			if err != nil {
@@ -106,13 +99,11 @@ func (s *Scanner) Start() error {
 
 // processBlock 处理单个区块
 func (s *Scanner) processBlock(blockNumber uint64) error {
-	// 获取区块信息
 	block, err := s.client.BlockByNumber(context.Background(), big.NewInt(int64(blockNumber)))
 	if err != nil {
 		return err
 	}
 
-	// 创建区块记录
 	latestBlock := &LastScannedBlockInfo{
 		BlockNumber: blockNumber,
 		ScannedAt:   time.Now().Format("2006-01-02 15:04:05"),
@@ -123,13 +114,11 @@ func (s *Scanner) processBlock(blockNumber uint64) error {
 	var mutex sync.Mutex
 	var wg sync.WaitGroup
 
-	// 使用缓冲通道作为信号量，限制并发数量
 	semaphore := make(chan struct{}, s.concurrentWorkers)
 
-	// 并发处理区块中的交易
 	for _, tx := range block.Transactions() {
 		wg.Add(1)
-		semaphore <- struct{}{} // 获取信号量
+		semaphore <- struct{}{}
 
 		go func(tx *types.Transaction) {
 			defer wg.Done()
@@ -154,7 +143,6 @@ func (s *Scanner) processBlock(blockNumber uint64) error {
 		}(tx)
 	}
 
-	// 等待所有 goroutine 完成
 	wg.Wait()
 
 	// 按时间戳升序排列交易
