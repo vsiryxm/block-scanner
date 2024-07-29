@@ -12,6 +12,7 @@ import (
 	"block-scanner/config"
 	"block-scanner/internal/database"
 	"block-scanner/internal/models"
+	"block-scanner/internal/pkg/utils"
 	"block-scanner/internal/queue"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -243,6 +244,8 @@ func (s *Scanner) convertToModelTransaction(tx *types.Transaction, block *types.
 		contractAddress = from.Hex()
 	}
 
+	gasFee := new(big.Int).Mul(new(big.Int).SetUint64(receipt.GasUsed), tx.GasPrice())
+
 	return &models.Transaction{
 		BlockNumber:     block.NumberU64(),
 		TxHash:          tx.Hash().Hex(),
@@ -252,6 +255,7 @@ func (s *Scanner) convertToModelTransaction(tx *types.Transaction, block *types.
 		TxTime:          time.Unix(int64(block.Time()), 0),
 		GasUsed:         receipt.GasUsed,
 		GasPrice:        tx.GasPrice().Uint64(),
+		GasFee:          utils.FormatEtherToFloat64(gasFee),
 		Status:          uint8(receipt.Status),
 		Logs:            string(logs),
 	}, nil

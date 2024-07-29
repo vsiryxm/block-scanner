@@ -16,6 +16,7 @@ type Transaction struct {
 	TxTime          time.Time `json:"tx_time"`
 	GasUsed         uint64    `json:"gas_used"`
 	GasPrice        uint64    `json:"gas_price"`
+	GasFee          float64   `json:"gas_fee"`
 	Status          uint8     `json:"status"`
 	Logs            string    `gorm:"type:text" json:"logs"`
 	CreatedAt       time.Time `gorm:"autoCreateTime" json:"created_at"`

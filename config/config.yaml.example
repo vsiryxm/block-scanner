@@ -2,13 +2,13 @@ environment: dev
 
 dev:
   ethereum:
-    rpc_url: "https://base-sepolia.g.alchemy.com/v2/{key}"
+    rpc_url: "https://eth-sepolia.g.alchemy.com/v2/{key}"
     contract_addresses:
-      - "0x1234567890123456789012345678901234567890"
+      - "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238"
       - "0x0987654321098765432109876543210987654321"
   mysql:
     host: "localhost"
-    port: 3306
+    port: 3308
     user: "root"
     password: ""
     database: "db_scanner"
@@ -16,22 +16,23 @@ dev:
     url: "amqp://user:password@rabbitmq_host:5672/"
     queue_name: "transactions"
   scanner:
-    start_block: 1
+    start_block: 4848135
     concurrent_workers: 10
+    mark_file: "last_scan_block_info.json"
   server:
     port: 8086
 
 prod:
   ethereum:
-    rpc_url: "https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID"
+    rpc_url: "https://eth-sepolia.g.alchemy.com/v2/{key}"
     contract_addresses:
-      - "0x1234567890123456789012345678901234567890"
+      - "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238"
       - "0x0987654321098765432109876543210987654321"
   mysql:
-    host: "production_mysql_host"
-    port: 3306
-    user: "production_user"
-    password: "production_password"
+    host: "localhost"
+    port: 3308
+    user: "root"
+    password: ""
     database: "db_scanner"
   rabbitmq:
     url: "amqp://user:password@production_rabbitmq_host:5672/"
@@ -39,5 +40,6 @@ prod:
   scanner:
     start_block: 1
     concurrent_workers: 20
+    mark_file: "last_scan_block_info.json"
   server:
-    port: 9096
+    port: 9086
