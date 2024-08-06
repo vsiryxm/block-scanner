@@ -2,17 +2,18 @@ package blockchain
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
-	"math/big"
 	"sort"
 	"sync"
 	"time"
 
 	"block-scanner/config"
+	"block-scanner/internal/pkg/utils"
 	"block-scanner/internal/queue"
 
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
@@ -28,6 +29,11 @@ type Scanner struct {
 type Transaction struct {
 	TxHash string    `json:"tx_hash"`
 	TxTime time.Time `json:"tx_time"`
+}
+
+type Message struct {
+	ChainId uint64 `json:"chain_id"`
+	TxHash  string `json:"tx_hash"`
 }
 
 // NewScanner 创建一个新的扫描器实例
@@ -106,55 +112,56 @@ func (s *Scanner) Start() error {
 
 // processBlock 处理单个区块
 func (s *Scanner) processBlock(blockNumber uint64) error {
-	// 获取区块信息
-	block, err := s.client.BlockByNumber(context.Background(), big.NewInt(int64(blockNumber)))
-	if err != nil {
-		return err
-	}
 
 	// 创建区块记录
-	latestBlock := &LastScannedBlockInfo{
+	lastScannedBlockInfo := &LastScannedBlockInfo{
 		BlockNumber: blockNumber,
 		ScannedAt:   time.Now().Format("2006-01-02 15:04:05"),
 		ScanStatus:  0,
 	}
 
-	transactions := make([]*Transaction, 0)
-	var mutex sync.Mutex
-	var wg sync.WaitGroup
+	// 使用低级 RPC 调用获取区块数据
+	var result map[string]interface{}
+	err := s.client.Client().Call(&result, "eth_getBlockByNumber", fmt.Sprintf("0x%x", blockNumber), true)
+	if err != nil {
+		return fmt.Errorf("error fetching block %d: %v", blockNumber, err)
+	}
 
-	// 使用缓冲通道作为信号量，限制并发数量
+	// 解析区块数据
+	blockTime := utils.HexToUint64(result["timestamp"].(string))
+	// blockHash := result["hash"].(string)
+
+	// 处理交易
+	transactions := make([]*Transaction, 0)
+	txs := result["transactions"].([]interface{})
+
+	var wg sync.WaitGroup
+	var mutex sync.Mutex
 	semaphore := make(chan struct{}, s.concurrentWorkers)
 
-	// 并发处理区块中的交易
-	for _, tx := range block.Transactions() {
+	for _, txData := range txs {
 		wg.Add(1)
-		semaphore <- struct{}{} // 获取信号量
+		semaphore <- struct{}{}
 
-		go func(tx *types.Transaction) {
+		go func(txData interface{}) {
 			defer wg.Done()
-			defer func() { <-semaphore }() // 释放信号量
+			defer func() { <-semaphore }()
 
-			// 检查交易是否与指定的合约地址相关
+			tx := txData.(map[string]interface{})
 			if s.isRelevantTransaction(tx) {
-				transaction := &Transaction{
-					TxHash: tx.Hash().Hex(),
-					TxTime: time.Unix(int64(block.Time()), 0),
-				}
+				transaction, err := s.convertToModelTransaction(tx, blockTime)
 				if err != nil {
 					log.Printf("Error converting transaction: %v", err)
 					return
 				}
 
-				// 将交易哈希添加到列表中
 				mutex.Lock()
 				transactions = append(transactions, transaction)
 				mutex.Unlock()
 			}
-		}(tx)
+		}(txData)
 	}
 
-	// 等待所有 goroutine 完成
 	wg.Wait()
 
 	// 按时间戳升序排列交易
@@ -163,18 +170,22 @@ func (s *Scanner) processBlock(blockNumber uint64) error {
 	})
 
 	// 发布交易到 RabbitMQ
-	txHashs := make([]*string, len(transactions))
+	messages := make([][]byte, len(transactions))
 	for k, v := range transactions {
-		txHashs[k] = &v.TxHash
+		message, _ := json.Marshal(Message{
+			ChainId: config.GetConfig().Ethereum.ChainId,
+			TxHash:  v.TxHash,
+		})
+		messages[k] = message
 	}
-	err = queue.PublishTransactions(txHashs)
+	err = queue.PublishTransactions(messages)
 	if err != nil {
 		return err
 	}
 
 	// 更新区块扫描状态
-	latestBlock.ScanStatus = 1
-	err = s.SaveLatestScannedBlockInfo(latestBlock)
+	lastScannedBlockInfo.ScanStatus = 1
+	err = s.SaveLatestScannedBlockInfo(lastScannedBlockInfo)
 	if err != nil {
 		return err
 	}
@@ -184,16 +195,27 @@ func (s *Scanner) processBlock(blockNumber uint64) error {
 }
 
 // isRelevantTransaction 检查交易是否与指定的合约地址相关
-func (s *Scanner) isRelevantTransaction(tx *types.Transaction) bool {
-	if tx.To() == nil {
-		return false
-	}
-	from, err := types.Sender(types.LatestSignerForChainID(tx.ChainId()), tx)
+func (s *Scanner) isRelevantTransaction(tx map[string]interface{}) bool {
+	from := tx["from"].(string)
+	to, toExists := tx["to"].(string)
 
-	if err != nil {
-		log.Printf("Error getting transaction sender: %v", err)
-		return false
+	if !toExists {
+		// 这可能是一个合约创建交易
+		return s.contractAddresses[common.HexToAddress(from)]
 	}
 
-	return s.contractAddresses[*tx.To()] || s.contractAddresses[from]
+	return s.contractAddresses[common.HexToAddress(to)] || s.contractAddresses[common.HexToAddress(from)]
+}
+
+// convertToModelTransaction 解析交易数据
+func (s *Scanner) convertToModelTransaction(tx map[string]interface{}, blockTime uint64) (*Transaction, error) {
+	txHash, ok := tx["hash"].(string)
+	if !ok {
+		return nil, fmt.Errorf("transaction hash not found or not a string")
+	}
+
+	return &Transaction{
+		TxHash: txHash,
+		TxTime: time.Unix(int64(blockTime), 0),
+	}, nil
 }

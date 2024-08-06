@@ -53,12 +53,12 @@ func InitRabbitMQ(cfg *config.Config) error {
 	return nil
 }
 
-func PublishTransactions(txHashs []*string) error {
+func PublishTransactions(messages [][]byte) error {
 	if rabbitMQ == nil || rabbitMQ.channel == nil {
 		return fmt.Errorf("RabbitMQ not initialized")
 	}
 
-	for _, txHash := range txHashs {
+	for _, message := range messages {
 
 		err := rabbitMQ.channel.Publish(
 			"",                 // exchange
@@ -67,7 +67,7 @@ func PublishTransactions(txHashs []*string) error {
 			false,              // immediate
 			amqp.Publishing{
 				ContentType: "text/plain",
-				Body:        []byte(*txHash), // 将字符串转换为 []byte
+				Body:        message,
 			})
 
 		if err != nil {

@@ -17,10 +17,11 @@ import (
 
 func main() {
 	// 加载配置
-	cfg, err := config.LoadConfig("config/config.yaml")
+	err := config.LoadConfig("config/config.yaml")
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
+	cfg := config.GetConfig()
 
 	// 初始化 RabbitMQ 连接
 	err = queue.InitRabbitMQ(cfg)
