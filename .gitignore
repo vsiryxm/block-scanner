@@ -4,3 +4,4 @@ configs/*.yaml
 logs/*.log
 */.DS_Store
 block-scanner*
+.DS_Store
