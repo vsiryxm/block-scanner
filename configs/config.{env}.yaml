@@ -1,0 +1,19 @@
+server:
+  name: "block-scanner"
+  port: 8091
+
+chain:
+  chain_id: 1946
+  provider: "https://soneium-minato.rpc.scs.startale.com?apikey={key}"
+  contracts:
+    - "0x4ED2223fD51302934dDE5514521e561e7B676d4D" # StakingFactory
+
+scanner:
+  start_block: 4917559 # 扫描的起始区块，建议从部署StakingFactory合约的区块的前一个区块号开始
+  concurrent_workers: 10
+  mark_file: "last_scan_block_info.json"
+
+rabbitmq:
+  url: "amqp://rabbitmq_admin:123456Abc@127.0.0.1:5672/"
+  queue_name: "token_pools_transactions" # 固定不用修改
+  

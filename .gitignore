@@ -1,5 +1,6 @@
 .vscode
-config/*.yaml
+configs/*.yaml
+!configs/config.{env}.yaml
 logs/*.log
 */.DS_Store
 block-scanner*
